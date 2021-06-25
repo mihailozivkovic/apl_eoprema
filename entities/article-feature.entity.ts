@@ -3,8 +3,10 @@ import {
   Entity,
   Index,
   JoinColumn,
+  JoinTable,
   ManyToOne,
   PrimaryGeneratedColumn,
+  ManyToMany
 } from "typeorm";
 import { Article } from "./article.entity";
 import { Feature } from "./feature.entity";
@@ -21,6 +23,9 @@ export class ArticleFeature {
     unsigned: true,
   })
   articleFeatureId: number;
+
+ 
+  articles:Article[]
 
   @Column("int", { name: "article_id", unsigned: true })
   articleId: number;
