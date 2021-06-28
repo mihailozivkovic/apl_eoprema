@@ -1,4 +1,4 @@
-import { Controller, Param, Post, UploadedFile, UseInterceptors } from "@nestjs/common";
+import { Controller, Param, Post, Req, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { Crud } from "@nestjsx/crud";
 import { Article } from "entities/article.entity";
@@ -9,6 +9,8 @@ import { StorageConfig } from "config/storage.config";
 import { Photo } from "entities/photo.entity";
 
 import { ApiResponse } from "src/misc/api.response.class";
+import { PhotoService } from "src/services/photo/photo.service";
+import * as fileType from 'file-type';
 
 @Controller('api/article')
 @Crud({
@@ -43,8 +45,9 @@ import { ApiResponse } from "src/misc/api.response.class";
     }
 })
 export class ArticleController {
-    photoService: any;
-    constructor(public service:ArticleService){}
+    constructor(public service:ArticleService,
+                public photoService:PhotoService
+        ){}
 
     @Post('createFull')
     createFullArticle(data:AddArticleDto){
@@ -72,7 +75,7 @@ export class ArticleController {
 
                     let randomPart :string= new Array (10)
                     .fill(0)
-                    .map(e => (Math.random()*9).toString())
+                    .map(e => (Math.random()*9).toFixed(0).toString())
                     .join('');
 
 
@@ -82,14 +85,17 @@ export class ArticleController {
                     callback(null,fileName);
                 }
             }),
+
             fileFilter: (req,file, callback)=>{
                 if(!file.originalname.match(/\.(jpg|png)$/)){
-                    callback(new Error('Bad file extension!'),false);
+                    req.fileFilterError='Bad file extension';
+                    callback(null,false);
                     return;
                 }
-                if (!(file.mimetype.includes('jpeg')|| file.mimetype.includes('png'))){
 
-                    callback(new Error('Bad file content!'),false);
+                if (!(file.mimetype.includes('jpeg')|| file.mimetype.includes('png'))){
+                    req.fileFilterError='Bad file content'
+                    callback(null,false);
                     return;
                 }
 
@@ -103,14 +109,31 @@ export class ArticleController {
             
         })
     )
-     async uploadPhoto(@Param ('id') articleId:number,@UploadedFile() photo):Promise<ApiResponse|Photo>{
+     async uploadPhoto(
+        @Param ('id') articleId:number,
+        @UploadedFile() photo,
+        @Req()req 
+        ):Promise<ApiResponse|Photo>{
+
+        if(req.fileFilterError){
+            return new ApiResponse('error', -4002,req.fileFilterError);
+        }
+        if(!photo){
+            return new ApiResponse('error', -4002,'File not uploaded');
+        }
+        
+        const fileTypeResult=fileType.fromFile(photo.path)
+        
+    
+}
+
         const newPhoto : Photo = new Photo();
         newPhoto.articleId = articleId;
         newPhoto.imagePath = photo.fileName;
 
-        const savedPhoto = this.photoService.add(newPhoto) 
+        const savedPhoto = await this.photoService.add(newPhoto) 
         if(!savedPhoto) {
-            return new ApiResponse('error', -4001);
+            return new ApiResponse('error', -4001,req.fileFilterError);
 
         }
         return savedPhoto;

@@ -21,6 +21,7 @@ import { ArticleController } from './controllers/api/article.controller';
 import { AuthController } from './controllers/api/auth.controller';
 import { AdministratorService } from './services/administrator/administrator.service';
 import { AuthMiddleware } from './middlewares/auth.middleware';
+import { PhotoService } from './services/photo/photo.service';
 
 
 @Module({
@@ -51,10 +52,11 @@ import { AuthMiddleware } from './middlewares/auth.middleware';
     Article,
     ArticlePrice,
     ArticleFeature,
+    Photo
   ])
   ],
   controllers: [AppController, AdministratorController,CategoryController,ArticleController,AuthController],
-  providers: [CategoryService,ArticleService,AdministratorService],
+  providers: [CategoryService,ArticleService,AdministratorService,PhotoService],
 })
 
 export class AppModule implements NestModule{
